@@ -1,0 +1,23 @@
+{
+  "name": "hestia",
+  "version": "1.0.0",
+  "description": "Find great real estate",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "author": "Jeremy",
+  "license": "ISC",
+  "dependencies": {
+    "arangojs": "^5.4.2",
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "mongoose": "^4.9.2",
+    "q": "^1.5.0",
+    "qs": "^6.4.0",
+    "request": "^2.79.0",
+    "underscore": "^1.8.3",
+    "x-ray": "^2.3.2"
+  }
+}
