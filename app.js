@@ -1,5 +1,7 @@
 "use strict";
 const express = require('express');
+const async = require('asyncawait/async');
+const await = require('asyncawait/await');
 const request = require('request');
 const Xray = require('x-ray');
 const xray = Xray();
@@ -11,6 +13,7 @@ const db = mongoose.connection;
 const Q = require('q');
 const crypto = require('crypto');
 const config = require('./config');
+
 // const qs = require('qs');
 
 mongoose.connect('mongodb://localhost/hestia');
@@ -39,10 +42,25 @@ var Options = function(uri, method, qs) {
 
 
 app.get('/', (req, res) => {
-  var options = new Options('https://sfbay.craigslist.org/search/apa?search_distance=5&postal=94704&min_price=1700&max_price=2500&bedrooms=1&minSqft=600&availabilityMode=0&pets_cat=1')
+  var queryString = {
+    'search_distance': '3',
+    'postal': '94709',
+    'min_price': '1700',
+    'max_price': '2500',
+    'bedrooms': '1',
+    'minSqft': '600',
+    'availabilityMode': '2',
+    'pets_cat': '1'
+  }
+  var options = new Options('https://sfbay.craigslist.org/search/apa', 'GET', queryString)
+  options.headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36'
+  }
+  // console.log('REQUEST', request);
+  console.log('OPTIONS', options);
   request(options, (error, response, body) => {
     console.log('ERROR', error);
-    // console.log('BODY', body );
+    // console.log('BODY', body);
 
 
     var listingInfo = () => {
@@ -65,7 +83,6 @@ app.get('/', (req, res) => {
             listingObj['checksum'] = checksum;
             return listingObj;
           });
-
           if (err) {
             deferred.reject(err);
           }
@@ -77,34 +94,14 @@ app.get('/', (req, res) => {
     }
 
 
-    async function getListingInfo () {
-      var res = await listingInfo();
-      // console.log('RES', res);
-      return res
-    }
+    var getListingInfo = async(function() {
+      var res = await(listingInfo());
+      return res;
+    });
 
-
-    // async function queryChecksum (listing) {
-    //   console.log('listing', listing);
-    //   var deferred = Q.defer();
-    //   var checksum = listing.checksum;
-    //   Listing.findOne({'checksum': checksum}, (err, doc) => {
-    //     console.log('ERR', err);
-    //     console.log('LISITNG DOC', doc);
-    //   });
-    // }
-
-
-    async function queryChecksum () {
-      var listings = await getListingInfo();      
-      console.log('listings', listings);
+    var queryChecksum = async(function() {
+      var listings = await(getListingInfo());
       _u.map(listings, (listing) => {
-        console.log('listing', listing);
-        // Listing.findOneAndUpdate({'checksum': listing.checksum}, {$set: listing}, {upsert: true}, (err, doc) => {
-        //   console.log('ERR', err);
-        //   console.log('DOC', doc);
-        // });
-
         Listing.findOne({'checksum': listing.checksum}, (err, doc) => {
           console.log('err', err);
           console.log('doc', doc);
@@ -112,21 +109,19 @@ app.get('/', (req, res) => {
             console.log('got an error');
           }
           else if (doc) {
-            console.log('noop');
+            console.log('NO-OP:', listing);
           }
           else {
-            console.log('add the record', listing);
+            console.log('NEW LISTING:', listing);
             listing.newListing = true
             Listing.findOneAndUpdate({'checksum': listing.checksum}, {$set: listing}, {upsert: true}, (err0, doc0) => {
               console.log('ADD ERR', err0);
               console.log('ADD DOC', doc0);
             });            
           }
-
         });
-
-      });
-    }
+      });      
+    });
 
     queryChecksum();
 
@@ -136,14 +131,9 @@ app.get('/', (req, res) => {
 
 
 app.get('/new', (req, res) => {
-  // Listing.update({'newListing': true}, {$set: {'newListing': false}}, {'multi': true}, (err, doc) => {
-  //   console.log('err', err);
-  //   console.log('doc', doc);
-  // });
-
   Listing.find({'newListing': true}, (err, doc) => {
     console.log('ERR', err);
-    console.log('Found new listing', doc);
+    console.log('DB: Found new listing', doc);
     if (err) {
       console.log('err');
     }
@@ -152,7 +142,7 @@ app.get('/new', (req, res) => {
         var queryString = {
           'apikey': config.apikey, 
           'subject': elem.title,
-          'msgTo': 'jeremy.r.sandor@gmail.com',
+          'msgTo': 'jeremy.r.sandor@gmail.com,anayahall@gmail.com',
           'from': 'info@latitudefourty.com',
           'template': 'New Listing',
           'merge_title': elem.title,
@@ -186,23 +176,12 @@ app.get('/new', (req, res) => {
   res.status(200).send('body');
 });
 
-// app.post('/foo', (req, res) => {
-//   console.log('req.body', req.body);
-//   res.send(403);
-// })
-
-
-// app.listen(8000, () => {
-//   console.log('app listening on port 8000');
-// })
-
-
 
 var server = app.listen(config.port, config.base_url, function() {
   var port = server.address().port;
   var host = server.address().address;
-  // console.log('process.env.NODE_ENV, process.env.HOST', process.env, process.env.HOST)
-  // console.log('server', server.address())
   console.log('Hestia listening at:', host, port);
 });
+
+server.timeout = 300000;
 

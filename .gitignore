@@ -1,2 +1,4 @@
 config.js
 node_modules*
+bin/query.sh
+bin/scrape.sh
