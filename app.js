@@ -49,7 +49,7 @@ app.get('/', (req, res) => {
     'max_price': '2500',
     'bedrooms': '1',
     'minSqft': '600',
-    'availabilityMode': '2',
+    'availabilityMode': '0',
     'pets_cat': '1'
   }
   var options = new Options('https://sfbay.craigslist.org/search/apa', 'GET', queryString)
@@ -57,7 +57,7 @@ app.get('/', (req, res) => {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36'
   }
   // console.log('REQUEST', request);
-  console.log('OPTIONS', options);
+  console.log(new Date(), 'OPTIONS', options);
   request(options, (error, response, body) => {
     console.log('ERROR', error);
     // console.log('BODY', body);
@@ -109,10 +109,10 @@ app.get('/', (req, res) => {
             console.log('got an error');
           }
           else if (doc) {
-            console.log('NO-OP:', listing);
+            console.log(new Date(), 'NO-OP:', listing);
           }
           else {
-            console.log('NEW LISTING:', listing);
+            console.log(new Date(), 'NEW LISTING:', listing);
             listing.newListing = true
             Listing.findOneAndUpdate({'checksum': listing.checksum}, {$set: listing}, {upsert: true}, (err0, doc0) => {
               console.log('ADD ERR', err0);
@@ -133,7 +133,7 @@ app.get('/', (req, res) => {
 app.get('/new', (req, res) => {
   Listing.find({'newListing': true}, (err, doc) => {
     console.log('ERR', err);
-    console.log('DB: Found new listing', doc);
+    console.log(new Date(), 'DB: Found new listing', doc);
     if (err) {
       console.log('err');
     }
